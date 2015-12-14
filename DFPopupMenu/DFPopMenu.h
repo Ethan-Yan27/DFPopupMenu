@@ -11,21 +11,29 @@
 
 typedef void(^DFPopMenuDidSelectedBlock)(NSInteger index, NSString *itemNameStr);
 
+@interface DFPopMenu : NSObject
+@property(nonatomic, assign) CGRect overlayFrame;//背景
+
++ (instancetype)shareDFPopMenu;
+
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithTargetView:(UIView *)view WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block;
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block;
+
+- (void)dismissDFMenu:(BOOL)animated;
+@end
+
 @interface DFPopMenuView : UIView
 @property(nonatomic, copy) DFPopMenuDidSelectedBlock popMenuDidSelectedBlock;
 
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithTargetView:(UIView *)view WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block;
 - (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block;
 
 - (void)dismissDFMenu:(BOOL)animated;
+
+- (CGRect)getTargetFrame;
 @end
 
-@interface DFPopMenu : NSObject
-+ (instancetype)shareDFPopMenu;
 
-- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block;
-
-- (void)dismissDFMenu:(BOOL)animated;
-@end
 
 
 @interface DFPopMenuTableCell : UITableViewCell

@@ -7,7 +7,7 @@
 //
 
 #import "DFPopMenu.h"
-
+static BOOL isShow = NO;
 static DFPopMenu *popMenu;
 
 @implementation DFPopMenu {
@@ -21,17 +21,45 @@ static DFPopMenu *popMenu;
     return popMenu;
 }
 
-- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithTargetView:(UIView *)view WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+    BOOL isEqual = false;
     if (_popMenuView) {
-        [_popMenuView dismissDFMenu:NO];
+        isEqual = CGRectEqualToRect(_popMenuView.getTargetFrame, targetFrame);
+        [_popMenuView dismissDFMenu:YES];
         _popMenuView = nil;
     }
-    _popMenuView = [[DFPopMenuView alloc] init];
+    if (isEqual) return;
+
+    if (CGRectEqualToRect(_overlayFrame, CGRectZero)) {
+        _popMenuView = [[DFPopMenuView alloc] init];
+    } else {
+        _popMenuView = [[DFPopMenuView alloc] initWithFrame:_overlayFrame];
+    }
+    [_popMenuView showDFMenuWithTargetFrame:targetFrame WithTargetView:view WithItemNameArray:itemNameArray withSelectedBlock:block];
+}
+
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+    BOOL isEqual = false;
+    if (_popMenuView) {
+        isEqual = CGRectEqualToRect(_popMenuView.getTargetFrame, targetFrame);
+        [_popMenuView dismissDFMenu:YES];
+        _popMenuView = nil;
+    }
+    if (isEqual) return;
+
+    if (CGRectEqualToRect(_overlayFrame, CGRectZero)) {
+        _popMenuView = [[DFPopMenuView alloc] init];
+    } else {
+        _popMenuView = [[DFPopMenuView alloc] initWithFrame:_overlayFrame];
+    }
     [_popMenuView showDFMenuWithTargetFrame:targetFrame WithItemNameArray:itemNameArray withSelectedBlock:block];
 }
 
 - (void)dismissDFMenu:(BOOL)animated {
+
     [_popMenuView dismissDFMenu:animated];
+    _popMenuView = nil;
+    isShow = NO;
 }
 @end
 
@@ -42,7 +70,7 @@ static DFPopMenu *popMenu;
 @end
 
 static const int DFMenuItemsHeight = 35;
-static const int DFMenuItemsWidth = 50;
+static const int DFMenuItemsWidth = 80;
 static const int DFMenuTableViewHSpace = 5;
 static const int DFMenuTableViewVSpace = 5;
 static const int arrowHeight = 5;
@@ -54,9 +82,14 @@ static const int arrowHeight = 5;
 }
 
 - (id)init {
-    if (self = [super init]) {
-        _superView = [[UIApplication sharedApplication] keyWindow];
-        self.frame = [[UIScreen mainScreen] bounds];
+    if (self = [self initWithFrame:[[UIScreen mainScreen] bounds]]) {
+
+    }
+    return self;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    if (self = [super initWithFrame:frame]) {
         self.backgroundColor = [UIColor clearColor];
     }
     return self;
@@ -66,7 +99,7 @@ static const int arrowHeight = 5;
     if (!_menuContainerView) {
         menuTableViewHeight = DFMenuItemsHeight * _menuItems.count + DFMenuTableViewVSpace;
 
-        CGFloat x = CGRectGetMidX(_targetFrame) - 30;
+        CGFloat x = CGRectGetMidX(_targetFrame) - (DFMenuItemsWidth + DFMenuTableViewHSpace * 2 + 4) / 2;
         CGFloat y = CGRectGetMinY(_targetFrame) - menuTableViewHeight - arrowHeight;
         CGFloat width = DFMenuItemsWidth + DFMenuTableViewHSpace * 2;
         CGFloat height = menuTableViewHeight + arrowHeight;
@@ -95,10 +128,28 @@ static const int arrowHeight = 5;
     return _menuTableView;
 }
 
-- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithTargetView:(UIView *)view WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+    _superView = view;
+    if (!_superView)
+        return;
+
     _menuItems = itemNameArray.mutableCopy;
     _targetFrame = targetFrame;
     _popMenuDidSelectedBlock = block;
+    [self showDFMenu];
+}
+
+- (void)showDFMenuWithTargetFrame:(CGRect)targetFrame WithItemNameArray:(NSArray *)itemNameArray withSelectedBlock:(DFPopMenuDidSelectedBlock)block {
+    _superView = [[UIApplication sharedApplication] keyWindow];
+
+    _menuItems = itemNameArray.mutableCopy;
+    _targetFrame = targetFrame;
+    _popMenuDidSelectedBlock = block;
+    [self showDFMenu];
+
+}
+
+- (void)showDFMenu {
     [self addSubview:self.menuContainerView];
     _menuContainerView.alpha = 0;
 
@@ -109,6 +160,7 @@ static const int arrowHeight = 5;
         _menuContainerView.alpha = 1;
         _menuContainerView.frame = toFrame;
     }];
+    isShow = YES;
 }
 
 - (void)dismissDFMenu:(BOOL)animated {
@@ -124,6 +176,7 @@ static const int arrowHeight = 5;
         } else {
             [self removeFromSuperview];
         }
+        isShow = NO;
     }
 }
 
@@ -135,6 +188,10 @@ static const int arrowHeight = 5;
     } else {
         [self dismissDFMenu:YES];
     }
+}
+
+- (CGRect)getTargetFrame {
+    return self.targetFrame;
 }
 
 #pragma mark tableView Delegate
